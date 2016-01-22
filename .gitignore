@@ -26,3 +26,15 @@
 *.exe
 *.out
 *.app
+
+# cmake files
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# External libraries
+c_library
+eigen_library
