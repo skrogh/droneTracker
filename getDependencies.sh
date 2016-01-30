@@ -11,8 +11,11 @@ echo Download done
 
 echo Now unpacking to Eigen.
 tar -zxvf ${EIGEN} ${SOURCE} --strip 1
+echo ad moving to eigen_library
+mv Eigen eigen_library
 
 echo Unpacking done
 echo Removing archive ${EIGEN}
 
 rm ${EIGEN}
+
