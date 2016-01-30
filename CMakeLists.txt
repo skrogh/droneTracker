@@ -11,7 +11,16 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 #    set(CMAKE_CXX_FLAGS "-Ofast")        ## Optimize
 #    set(CMAKE_EXE_LINKER_FLAGS "-s")  ## Strip binary
 endif()
-add_definitions(-std=c++11)
+
+execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
+                OUTPUT_VARIABLE GCC_VERSION)
+if (GCC_VERSION VERSION_GREATER 4.7 OR GCC_VERSION VERSION_EQUAL 4.7)
+    message(STATUS  "Gcc version >= 4.7, using c++11")
+	add_definitions(-std=c++11)
+else()
+	message(FATAL_ERROR "Gcc version < 4.7, aborting. We need c++11 support")
+endif()
+
 
 ## External files
 

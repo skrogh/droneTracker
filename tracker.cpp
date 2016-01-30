@@ -35,7 +35,7 @@ the use of this software, even if advised of the possibility of such damage.
 #include <iostream>
 
 #include <Eigen/Dense>
-#include <Eigen/Geometry> 
+#include <Eigen/Geometry>
 
 // Thread for camera "server" ensures that we always have the newest camera data
 #include <thread>
@@ -196,7 +196,7 @@ Mat inputImage;
 mutex m_newImage;
 condition_variable cv_newImage;
 
-void cameraThread(int camId) 
+void cameraThread(int camId)
 {
     #ifdef PTHREAD
     pthread_t thId = pthread_self();
@@ -218,7 +218,7 @@ void cameraThread(int camId)
     inputVideo.set(CV_CAP_PROP_FRAME_WIDTH,1920);
     inputVideo.set(CV_CAP_PROP_FRAME_HEIGHT,1080);
 
-    
+
     int totalIterations = 0;
     double tick = (double)getTickCount();
 
@@ -270,15 +270,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    aruco::DetectorParameters detectorParams;
+    aruco::DetectorParameters _detectorParams;
     if(parser.has("dp")) {
-        bool readOk = readDetectorParameters(parser.get<string>("dp"), detectorParams);
+        bool readOk = readDetectorParameters(parser.get<string>("dp"), _detectorParams);
         if(!readOk) {
             cerr << "Invalid detector parameters file" << endl;
             return 0;
         }
     }
-    detectorParams.doCornerRefinement = true; // do corner refinement in markers
+    _detectorParams.doCornerRefinement = true; // do corner refinement in markers
+    cv::Ptr<aruco::DetectorParameters> detectorParams(&_detectorParams);
 
     int camId = parser.get<int>("ci");
 
@@ -292,8 +293,10 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    aruco::Dictionary dictionary =
+    aruco::Dictionary _dictionary =
         aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(dictionaryId));
+
+    cv::Ptr<aruco::Dictionary> dictionary(&_dictionary);
 
     Mat camMatrix, distCoeffs;
     if(estimatePose) {
@@ -322,7 +325,7 @@ int main(int argc, char *argv[]) {
 
     /*
      * Inintalize video device
-     */    
+     */
     int waitTime = 1;
     // TODO: start thread
     thread camera_thread(cameraThread,camId);
@@ -342,10 +345,11 @@ int main(int argc, char *argv[]) {
     boardPoints[0][3] = Point3f( -0.05, -0.05, 0.12 );
     boardIds[0] = 0;
 
-    aruco::Board board;
-    board.objPoints = boardPoints;
-    board.dictionary = dictionary;
-    board.ids = boardIds;
+    aruco::Board _board;
+    _board.objPoints = boardPoints;
+    _board.dictionary = dictionary;
+    _board.ids = boardIds;
+    cv::Ptr<aruco::Board> board(&_board);
 
     while(true) {
         Mat imageCopy;
