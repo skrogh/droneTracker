@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    Ptr<aruco::DetectorParameters> detectorParams;
+    Ptr<aruco::DetectorParameters> detectorParams(new aruco::DetectorParameters());
     if(parser.has("dp")) {
         bool readOk = readDetectorParameters(parser.get<string>("dp"), detectorParams);
         if(!readOk) {
@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
     boardPoints[0][3] = Point3f( -0.05, -0.05, 0.12 );
     boardIds[0] = 0;
 
-    Ptr<aruco::Board> board;
+    Ptr<aruco::Board> board(new aruco::Board());
     board->objPoints = boardPoints;
     board->dictionary = dictionary;
     board->ids = boardIds;
