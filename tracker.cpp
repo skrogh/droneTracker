@@ -59,17 +59,18 @@ using namespace cv;
 namespace {
 const char* about = "Basic marker detection for drone localization";
 const char* keys  =
-        "{d        |       | dictionary: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,"
+        "{d        |         | dictionary: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,"
         "DICT_4X4_1000=3, DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7, "
         "DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12,"
         "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16}"
-        "{v        |       | Input from video file, if ommited, input comes from camera }"
-        "{ci       | 0     | Camera id if input doesnt come from video (-v) }"
-        "{c        |       | Camera intrinsic parameters. Needed for marker pose }"
-        "{cp       |       | Camera position and rotation file. Default is camra at origin pointing up, y oppoite of N, x opposite of E }"
-        "{l        | 0.1   | Marker side lenght (in meters). Needed for correct scale in camera pose }"
-        "{dp       |       | File of marker detector parameters }"
-        "{r        |       | show rejected candidates too }";
+        "{v        |         | Input from video file, if ommited, input comes from camera }"
+        "{ci       | 0       | Camera id if input doesnt come from video (-v) }"
+        "{c        |         | Camera intrinsic parameters. Needed for marker pose }"
+        "{cp       |         | Camera position and rotation file. Default is camra at origin pointing up, y oppoite of N, x opposite of E }"
+        "{dp       |         | File of marker detector parameters }"
+        "{r        |         | show rejected candidates too }"
+        "{dv       | ttyUSB0 | Device for Mavlink }"
+        "{db       | 57600   | Baudrate for Mavlink device }";
 }
 
 /**
@@ -114,30 +115,30 @@ static bool readCameraPosParameters(string filename, Eigen::Vector3d &C_p_NED, E
 
 /**
  */
-static bool readDetectorParameters(string filename, aruco::DetectorParameters &params) {
+static bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameters> &params) {
     FileStorage fs(filename, FileStorage::READ);
     if(!fs.isOpened())
         return false;
-    fs["adaptiveThreshWinSizeMin"] >> params.adaptiveThreshWinSizeMin;
-    fs["adaptiveThreshWinSizeMax"] >> params.adaptiveThreshWinSizeMax;
-    fs["adaptiveThreshWinSizeStep"] >> params.adaptiveThreshWinSizeStep;
-    fs["adaptiveThreshConstant"] >> params.adaptiveThreshConstant;
-    fs["minMarkerPerimeterRate"] >> params.minMarkerPerimeterRate;
-    fs["maxMarkerPerimeterRate"] >> params.maxMarkerPerimeterRate;
-    fs["polygonalApproxAccuracyRate"] >> params.polygonalApproxAccuracyRate;
-    fs["minCornerDistanceRate"] >> params.minCornerDistanceRate;
-    fs["minDistanceToBorder"] >> params.minDistanceToBorder;
-    fs["minMarkerDistanceRate"] >> params.minMarkerDistanceRate;
-    fs["doCornerRefinement"] >> params.doCornerRefinement;
-    fs["cornerRefinementWinSize"] >> params.cornerRefinementWinSize;
-    fs["cornerRefinementMaxIterations"] >> params.cornerRefinementMaxIterations;
-    fs["cornerRefinementMinAccuracy"] >> params.cornerRefinementMinAccuracy;
-    fs["markerBorderBits"] >> params.markerBorderBits;
-    fs["perspectiveRemovePixelPerCell"] >> params.perspectiveRemovePixelPerCell;
-    fs["perspectiveRemoveIgnoredMarginPerCell"] >> params.perspectiveRemoveIgnoredMarginPerCell;
-    fs["maxErroneousBitsInBorderRate"] >> params.maxErroneousBitsInBorderRate;
-    fs["minOtsuStdDev"] >> params.minOtsuStdDev;
-    fs["errorCorrectionRate"] >> params.errorCorrectionRate;
+    fs["adaptiveThreshWinSizeMin"] >> params->adaptiveThreshWinSizeMin;
+    fs["adaptiveThreshWinSizeMax"] >> params->adaptiveThreshWinSizeMax;
+    fs["adaptiveThreshWinSizeStep"] >> params->adaptiveThreshWinSizeStep;
+    fs["adaptiveThreshConstant"] >> params->adaptiveThreshConstant;
+    fs["minMarkerPerimeterRate"] >> params->minMarkerPerimeterRate;
+    fs["maxMarkerPerimeterRate"] >> params->maxMarkerPerimeterRate;
+    fs["polygonalApproxAccuracyRate"] >> params->polygonalApproxAccuracyRate;
+    fs["minCornerDistanceRate"] >> params->minCornerDistanceRate;
+    fs["minDistanceToBorder"] >> params->minDistanceToBorder;
+    fs["minMarkerDistanceRate"] >> params->minMarkerDistanceRate;
+    fs["doCornerRefinement"] >> params->doCornerRefinement;
+    fs["cornerRefinementWinSize"] >> params->cornerRefinementWinSize;
+    fs["cornerRefinementMaxIterations"] >> params->cornerRefinementMaxIterations;
+    fs["cornerRefinementMinAccuracy"] >> params->cornerRefinementMinAccuracy;
+    fs["markerBorderBits"] >> params->markerBorderBits;
+    fs["perspectiveRemovePixelPerCell"] >> params->perspectiveRemovePixelPerCell;
+    fs["perspectiveRemoveIgnoredMarginPerCell"] >> params->perspectiveRemoveIgnoredMarginPerCell;
+    fs["maxErroneousBitsInBorderRate"] >> params->maxErroneousBitsInBorderRate;
+    fs["minOtsuStdDev"] >> params->minOtsuStdDev;
+    fs["errorCorrectionRate"] >> params->errorCorrectionRate;
     return true;
 }
 
@@ -256,7 +257,6 @@ int main(int argc, char *argv[]) {
     int dictionaryId = parser.get<int>("d");
     bool showRejected = parser.has("r");
     bool estimatePose = parser.has("c");
-    float markerLength = parser.get<float>("l");
     bool hasCameraPos = parser.has("cp");
 
     // Default camera pose
@@ -270,16 +270,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    aruco::DetectorParameters _detectorParams;
+    Ptr<aruco::DetectorParameters> detectorParams;
     if(parser.has("dp")) {
-        bool readOk = readDetectorParameters(parser.get<string>("dp"), _detectorParams);
+        bool readOk = readDetectorParameters(parser.get<string>("dp"), detectorParams);
         if(!readOk) {
             cerr << "Invalid detector parameters file" << endl;
             return 0;
         }
     }
-    _detectorParams.doCornerRefinement = true; // do corner refinement in markers
-    cv::Ptr<aruco::DetectorParameters> detectorParams(&_detectorParams);
+    detectorParams->doCornerRefinement = true; // do corner refinement in markers
 
     int camId = parser.get<int>("ci");
 
@@ -293,10 +292,8 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    aruco::Dictionary _dictionary =
+    Ptr<aruco::Dictionary> dictionary =
         aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(dictionaryId));
-
-    cv::Ptr<aruco::Dictionary> dictionary(&_dictionary);
 
     Mat camMatrix, distCoeffs;
     if(estimatePose) {
@@ -313,7 +310,15 @@ int main(int argc, char *argv[]) {
      * Open serial port for passing messages to pixhawk
      */
     char *uart_name = (char*)"/dev/ttyUSB0";
+    string uart_name_s;
+    if(parser.has("dv")) {
+    	uart_name_s = parser.get<string>("dv");
+    	uart_name = (char*)uart_name_s.c_str();
+    }
     int baudrate = 57600;
+    if(parser.has("db")) {
+    	baudrate = parser.get<int>("db");
+    }
     Serial_Port serial_port(uart_name, baudrate);
     serial_port.start();
 
@@ -345,11 +350,10 @@ int main(int argc, char *argv[]) {
     boardPoints[0][3] = Point3f( -0.05, -0.05, 0.12 );
     boardIds[0] = 0;
 
-    aruco::Board _board;
-    _board.objPoints = boardPoints;
-    _board.dictionary = dictionary;
-    _board.ids = boardIds;
-    cv::Ptr<aruco::Board> board(&_board);
+    Ptr<aruco::Board> board;
+    board->objPoints = boardPoints;
+    board->dictionary = dictionary;
+    board->ids = boardIds;
 
     while(true) {
         Mat imageCopy;
