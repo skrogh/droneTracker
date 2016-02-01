@@ -53,6 +53,8 @@
 // ------------------------------------------------------------------------------
 
 #include "serial_port.h"
+#include <stdio.h>
+#include <errno.h>
 
 
 // ----------------------------------------------------------------------------------
@@ -218,7 +220,7 @@ open_serial()
 	// --------------------------------------------------------------------------
 	//   OPEN PORT
 	// --------------------------------------------------------------------------
-	printf("OPEN PORT\n");
+	printf("OPENING PORT: %s\n", uart_name);
 
 	fd = _open_port(uart_name);
 
@@ -226,6 +228,7 @@ open_serial()
 	if (fd == -1)
 	{
 		printf("failure, could not open port.\n");
+		perror("Error:");
 		throw EXIT_FAILURE;
 	}
 
