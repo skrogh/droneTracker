@@ -59,18 +59,18 @@ using namespace cv;
 namespace {
 const char* about = "Basic marker detection for drone localization";
 const char* keys  =
-        "{d        |         | dictionary: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,"
+        "{d        |              | dictionary: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,"
         "DICT_4X4_1000=3, DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7, "
         "DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12,"
         "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16}"
-        "{v        |         | Input from video file, if ommited, input comes from camera }"
-        "{ci       | 0       | Camera id if input doesnt come from video (-v) }"
-        "{c        |         | Camera intrinsic parameters. Needed for marker pose }"
-        "{cp       |         | Camera position and rotation file. Default is camra at origin pointing up, y oppoite of N, x opposite of E }"
-        "{dp       |         | File of marker detector parameters }"
-        "{r        |         | show rejected candidates too }"
-        "{dv       | ttyUSB0 | Device for Mavlink }"
-        "{db       | 57600   | Baudrate for Mavlink device }";
+        "{v        |              | Input from video file, if ommited, input comes from camera }"
+        "{ci       | 0            | Camera id if input doesnt come from video (-v) }"
+        "{c        |              | Camera intrinsic parameters. Needed for marker pose }"
+        "{cp       |              | Camera position and rotation file. Default is camra at origin pointing up, y oppoite of N, x opposite of E }"
+        "{dp       |              | File of marker detector parameters }"
+        "{r        |              | show rejected candidates too }"
+        "{dv       | /dev/ttyUSB0 | Device for Mavlink }"
+        "{db       | 57600        | Baudrate for Mavlink device }";
 }
 
 /**
@@ -309,17 +309,16 @@ int main(int argc, char *argv[]) {
     /*
      * Open serial port for passing messages to pixhawk
      */
-    char *uart_name = (char*)"/dev/ttyUSB0";
-    string uart_name_s;
+    string uart_name = "CommandLineParser should set this to default!";
     if(parser.has("dv")) {
-    	uart_name_s = parser.get<string>("dv");
-    	uart_name = (char*)uart_name_s.c_str();
+    	uart_name = parser.get<string>("dv");
     }
     int baudrate = 57600;
     if(parser.has("db")) {
     	baudrate = parser.get<int>("db");
     }
-    Serial_Port serial_port(uart_name, baudrate);
+    char * tmp = (char*)uart_name.c_str();
+    Serial_Port serial_port(tmp, baudrate);
     serial_port.start();
 
     /*

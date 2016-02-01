@@ -38,3 +38,6 @@ install_manifest.txt
 # External libraries
 c_library
 eigen_library
+
+# Binaries (should probably add out of source build...)
+tracker

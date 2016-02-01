@@ -228,7 +228,7 @@ open_serial()
 	if (fd == -1)
 	{
 		printf("failure, could not open port.\n");
-		perror("Error:");
+		perror("Error");
 		throw EXIT_FAILURE;
 	}
 
